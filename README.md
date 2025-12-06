@@ -10,7 +10,7 @@
 
 ## 使い方
 
-**オンライン**: https://kawaiiwarabou.github.io/AnotherEdenCalc/
+**オンライン**: https://kawaiiwarabou.github.io/AECalc/
 
 **ローカル**: `index.html` をブラウザで開く
 
