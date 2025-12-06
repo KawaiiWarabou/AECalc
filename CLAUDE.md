@@ -6,7 +6,7 @@
 
 - **Type**: Single-page web application (SPA)
 - **Target Audience**: Japanese-speaking "Another Eden" players
-- **Deployment**: GitHub Pages at https://kawaiiwarabou.github.io/AnotherEdenCalc/
+- **Deployment**: GitHub Pages at https://kawaiiwarabou.github.io/AECalc/
 - **Size**: ~1,700 lines of code, ~120KB total
 
 ## Technology Stack
@@ -29,7 +29,7 @@ This is intentional: the project is designed to be lightweight, fast-loading, an
 ## Codebase Structure
 
 ```
-/home/user/AnotherEdenCalc/
+/home/user/AECalc/
 ├── index.html              # Main application (840 lines)
 ├── styles.css              # All styling (110 lines)
 ├── README.md               # Project description (Japanese)
@@ -190,7 +190,7 @@ git push -u origin claude/claude-md-mipzl6wzzfzm62bu-01VTdaSVouYQJn3zAJyuHm6q
 **GitHub Pages** automatically deploys from the main branch:
 1. Merge feature branch to main
 2. GitHub Pages rebuilds site automatically
-3. Changes live at: https://kawaiiwarabou.github.io/AnotherEdenCalc/
+3. Changes live at: https://kawaiiwarabou.github.io/AECalc/
 
 The `.nojekyll` file ensures raw HTML is served without Jekyll processing.
 
@@ -365,8 +365,8 @@ When working on specific features, refer to:
 
 ## Additional Resources
 
-- **Repository**: https://github.com/KawaiiWarabou/AnotherEdenCalc
-- **Live Site**: https://kawaiiwarabou.github.io/AnotherEdenCalc/
+- **Repository**: https://github.com/KawaiiWarabou/AECalc
+- **Live Site**: https://kawaiiwarabou.github.io/AECalc/
 
 ## Version History
 

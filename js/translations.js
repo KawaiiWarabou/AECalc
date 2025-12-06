@@ -182,7 +182,7 @@ var TRANSLATIONS = {
             specialSection: "■ 特殊バフ・コンボなど",
             auraSection: "■ オーラ/環境効果",
             toolCredit: "このツールで作成:",
-            toolUrl: "https://kawaiiwarabou.github.io/AnotherEdenCalc/",
+            toolUrl: "https://kawaiiwarabou.github.io/AECalc/",
             // 結果ラベル
             eleNormalNormal: "属性攻撃・等倍・通常",
             eleNormalCritical: "属性攻撃・等倍・クリティカル",
@@ -385,7 +385,7 @@ var TRANSLATIONS = {
             specialSection: "■ Special Buffs & Combos",
             auraSection: "■ Aura/Environment Effects",
             toolCredit: "Created with:",
-            toolUrl: "https://kawaiiwarabou.github.io/AnotherEdenCalc/",
+            toolUrl: "https://kawaiiwarabou.github.io/AECalc/",
             // Result labels
             eleNormalNormal: "Elemental・Neutral・Normal",
             eleNormalCritical: "Elemental・Neutral・Critical",
@@ -588,7 +588,7 @@ var TRANSLATIONS = {
             specialSection: "■ 特殊增益·连击等",
             auraSection: "■ 光环/环境效果",
             toolCredit: "使用工具创建:",
-            toolUrl: "https://kawaiiwarabou.github.io/AnotherEdenCalc/",
+            toolUrl: "https://kawaiiwarabou.github.io/AECalc/",
             // 结果标签
             eleNormalNormal: "属性攻击·等倍·通常",
             eleNormalCritical: "属性攻击·等倍·暴击",
