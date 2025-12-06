@@ -12,7 +12,7 @@ var TRANSLATIONS = {
 
         // ページタイトル
         title: "アナデン ダメージ計算ツール",
-        pageTitle: "アナデン ダメージ計算ツール（完全版）",
+        pageTitle: "Another Eden Damage Calculator",
 
         // ボタン
         buttons: {
@@ -215,7 +215,7 @@ var TRANSLATIONS = {
 
         // Page title
         title: "Another Eden Damage Calculator",
-        pageTitle: "Another Eden Damage Calculator (Full Version)",
+        pageTitle: "Another Eden Damage Calculator",
 
         // Buttons
         buttons: {
@@ -418,7 +418,7 @@ var TRANSLATIONS = {
 
         // 页面标题
         title: "另一个伊甸 伤害计算器",
-        pageTitle: "另一个伊甸 伤害计算器（完全版）",
+        pageTitle: "Another Eden Damage Calculator",
 
         // 按钮
         buttons: {
