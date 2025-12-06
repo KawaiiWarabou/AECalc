@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Another Eden Damage Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- 多言語対応スクリプト（他のスクリプトより先に読み込む） -->
+    <script src="js/translations.js"></script>
+    <script src="js/i18n.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <h1>Another Eden Damage Calculator</h1>
+            <div class="language-switcher">
+                <button class="lang-btn active" data-lang="ja" onclick="setLanguage('ja')">日本語</button>
+                <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">English</button>
+                <button class="lang-btn" data-lang="zh" onclick="setLanguage('zh')">中文</button>
+            </div>
+        </div>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('physical')" data-i18n="tabs.physical">腕力依存</button>
+            <button class="tab" onclick="switchTab('magic')" data-i18n="tabs.magic">知性依存</button>
+        </div>
+        
+        <!-- 物理ダメージ計算（腕力依存） -->
+        <div id="physical" class="tab-content active">
+            <form name="PhysicP">
+                <div class="calculator-card">
+                    <div class="card-header">
+                        <span data-i18n="tabs.physical">腕力依存</span> <span data-i18n="sections.statusPower">ダメージ計算</span>
+                        <div>
+                            <button type="button" onclick="resetForm('PhysicP')" data-i18n="buttons.reset">リセット</button>
+                            <button type="button" onclick="calculate('PhysicP','Phy','Pwr')" data-i18n="buttons.calculate">計算</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- プリセット管理 -->
+                        <div class="preset-section">
+                            <h4 data-i18n="preset.title">プリセット管理</h4>
+                            <div class="preset-row">
+                                <input type="text" id="presetName_PhysicP" placeholder="プリセット名" data-i18n="preset.name">
+                                <button type="button" class="btn-save" onclick="savePreset('PhysicP')" data-i18n="buttons.save">保存</button>
+                                <select id="presetList_PhysicP" onchange="updateDeleteBtn('PhysicP')">
+                                    <option value="" data-i18n="preset.select">-- 選択 --</option>
+                                </select>
+                                <button type="button" class="btn-load" onclick="loadPreset('PhysicP')" data-i18n="buttons.load">読込</button>
+                                <button type="button" class="btn-delete" onclick="deletePreset('PhysicP')" data-i18n="buttons.delete">削除</button>
+                            </div>
+                            <div class="preset-row" style="margin-top: 8px;">
+                                <button type="button" class="btn-share-url" onclick="shareState('PhysicP')" data-i18n="buttons.shareUrl">🔗 URL共有</button>
+                                <button type="button" class="btn-share-text" onclick="shareAsText('PhysicP')" data-i18n="buttons.shareText">📋 テキスト共有</button>
+                                <button type="button" class="btn-share-image" onclick="shareAsImage('PhysicP')" data-i18n="buttons.shareImage">📷 画像共有</button>
+                            </div>
+                        </div>
+
+                        <!-- ステータス・威力 -->
+                        <div class="section">
+                            <div class="section-title" data-i18n="sections.statusPower">ステータス・威力</div>
+                            <div class="stat-group ally">
+                                <div class="stat-group-title" data-i18n="stats.ally">味方ステータス</div>
+                                <div class="input-grid">
+                                    <div class="input-item"><label data-i18n="stats.power">腕力</label><input type="number" name="Pwr" min="0" value="0" onchange="calculate('PhysicP','Phy','Pwr')"></div>
+                                    <div class="input-item"><label data-i18n="stats.intelligence">知性</label><input type="number" name="Itg" min="0" value="0" onchange="calculate('PhysicP','Phy','Pwr')"></div>
+                                    <div class="input-item"><label data-i18n="stats.mp">MP</label><input type="number" name="Mp" min="0" value="0" onchange="calculate('PhysicP','Phy','Pwr')"></div>
+                                    <div class="input-item"><label data-i18n="stats.weaponPhyAtk">武器攻撃</label><input type="number" name="WpPhyAtk" min="0" value="0" onchange="calculate('PhysicP','Phy','Pwr')"></div>
+                                    <div class="input-item"><label data-i18n="stats.weaponMagAtk">武器魔力</label><input type="number" name="WpMagAtk" min="0" value="0" onchange="calculate('PhysicP','Phy','Pwr')"></div>
+                                    <div class="input-item"><label data-i18n="stats.attack">攻撃</label><span class="output-value" id="PhysicP-PhyAtk">0</span></div>
+                                    <div class="input-item"><label data-i18n="stats.magic">魔力</label><span class="output-value" id="PhysicP-MagAtk">0</span></div>
+                                </div>
+                            </div>
+                            <div class="stat-group enemy">
+                                <div class="stat-group-title" data-i18n="stats.enemy">敵ステータス</div>
+                                <div class="input-grid">
+                                    <div class="input-item"><label data-i18n="stats.defense">防御</label><input type="number" name="PhyDef" min="0" value="174" onchange="calculate('PhysicP','Phy','Pwr')"></div>
+                                    <div class="input-item"><label data-i18n="stats.level">Lv</label><input type="number" name="EneLv" min="0" value="140" onchange="calculate('PhysicP','Phy','Pwr')"></div>
+                                </div>
+                            </div>
+                            <div class="stat-group skill">
+                                <div class="stat-group-title" data-i18n="stats.skill">スキル</div>
+                                <div class="input-grid">
+                                    <div class="input-item"><label data-i18n="stats.skillPower">威力</label><input type="number" name="Mod" min="0" step="1" value="100" onchange="calculate('PhysicP','Phy','Pwr')">%</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 装備効果 -->
+                        <div class="section">
+                            <div class="section-title equip collapsible active" onclick="toggleSection(this)" data-i18n="sections.equipment">装備効果</div>
+                            <div class="collapse-content show">
+                                <div class="buff-grid">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEleBfEq" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.elementalBuff">属性バフ(装備効果)</span>
+                                        <input type="number" name="EleBfEq1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkHpBfEq" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.hpCondition">HP条件強化(装備効果)</span>
+                                        <input type="number" name="HpBfEq1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkPPEq" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.statusAilment">状態異常強化(装備効果)</span>
+                                        <input type="number" name="PPEq1" class="pp-eq-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="PPEq2" class="pp-eq-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="PPEq3" class="pp-eq-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="PPEq4" class="pp-eq-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="PPEq5" class="pp-eq-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="PPEq6" class="pp-eq-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkWeak" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.weaknessEnhance">弱点強化</span>
+                                        <input type="number" name="Weak1" value="50" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkMpCost" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.mpCostAttack">MP消費攻撃</span>
+                                        <input type="number" name="MpCost1" value="15" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkOoAf" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.targetAim">狙い撃つ</span>
+                                        <input type="number" name="OoAf1" value="50" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEneNum" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.enemyCount">てきのかず</span>
+                                        敵数<input type="number" name="EneNum1" value="1" min="1" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        ×<input type="number" name="EneNum2" value="30" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <span class="result"><output name="EneNum">0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkTenmei" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.lightShadow">天冥人数補正</span>
+                                        <input type="number" name="Tenmei1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkDbs" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.statusEnhance">状態異常エンハンス</span>
+                                        <input type="number" name="Dbs1" value="50" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkOverthrowEq" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.overthrowEquip">下克上(装備効果)</span>
+                                        <select name="OverthrowEqType" onchange="calculate('PhysicP','Phy','Pwr')">
+                                            <option value="elpis">エルピス</option>
+                                            <option value="mujima">ムジマ</option>
+                                        </select>
+                                        <span class="result"><output name="OverthrowEq">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkGrowUp" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.damageGrowth">与ダメ倍成長</span>
+                                        <input type="number" name="GrowUp1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkGrowDown" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.damageReductionGrowth">被ダメ減成長(敵)</span>
+                                        <input type="number" name="GrowDown1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkDespair" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.despairPower">絶望の力</span>
+                                        人数<input type="number" name="Despair1" value="" min="0" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        ×<input type="number" name="Despair2" value="100" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="result"><output name="Despair">0</output>%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ダメージ補正 -->
+                        <div class="section">
+                            <div class="section-title collapsible active" onclick="toggleSection(this)" data-i18n="sections.damageModifiers">ダメージ補正</div>
+                            <div class="collapse-content show">
+                                <div class="buff-grid">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkPwrBf" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.powerBuff">腕力バフ</span>
+                                        <input type="number" name="PwrBf1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="PwrBf2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="PwrBf3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkPwrDb" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.debuff">デバフ</span>
+                                        <input type="number" name="PwrDb1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="PwrDb2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="PwrDb3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="result"><output name="PwrBf">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkItgBf" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.intelligenceBuff">知性バフ</span>
+                                        <input type="number" name="ItgBf1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="ItgBf2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="ItgBf3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkItgDb" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.debuff">デバフ</span>
+                                        <input type="number" name="ItgDb1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="ItgDb2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="ItgDb3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="result"><output name="ItgBf">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkPhyRDb" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.physicalResDebuff">物耐デバフ(敵)</span>
+                                        <input type="number" name="PhyRDb1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="PhyRDb2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="PhyRDb3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkPhyRBf" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.buff">バフ</span>
+                                        <input type="number" name="PhyRBf1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="PhyRBf2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="PhyRBf3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="result"><output name="PhyRDb">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEleRDb" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.elementalResDebuff">属耐デバフ(敵)</span>
+                                        <input type="number" name="EleRDb1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="EleRDb2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="EleRDb3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkEleRBf" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.buff">バフ</span>
+                                        <input type="number" name="EleRBf1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="EleRBf2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="EleRBf3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="result"><output name="EleRDb">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkWpBf" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.weaponTypeBuff">武器種バフ</span>
+                                        <input type="number" name="WpBf1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="WpBf2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="WpBf3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="result"><output name="WpBf">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEleBf" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.elementalBuff">属性バフ</span>
+                                        <input type="number" name="EleBf1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="EleBf2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="EleBf3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkEleDb" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.debuff">デバフ</span>
+                                        <input type="number" name="EleDb1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="EleDb2" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <input type="number" name="EleDb3" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span class="result"><output name="EleBf">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkCriBf" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.criticalDamageBuff">クリダメバフ</span>
+                                        <input type="number" name="CriBf1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <input type="hidden" name="ChkPP">
+                                    <input type="hidden" name="PP1" value="0"><input type="hidden" name="PP2" value="0"><input type="hidden" name="PP3" value="0">
+                                    <input type="hidden" name="ChkSelfPP">
+                                    <input type="hidden" name="SelfPP1" value="0"><input type="hidden" name="SelfPP2" value="0"><input type="hidden" name="SelfPP3" value="0">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkShingittai" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="buffs.shingittai">心技一体</span>
+                                        <span class="result"><output name="Shingittai">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEagle" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="buffs.eagle">虎視眈眼</span>
+                                        <input type="number" name="Eagle1" value="30" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkOverthrow" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="buffs.overthrow">下克上</span>
+                                        <span class="result"><output name="Overthrow">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkBreak" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.break">ブレイク</span>(<output name="Break">0</output>%)
+                                        <span style="margin-left:15px;">バリア(敵)</span>
+                                        <input type="number" name="Barrier1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkOverCri" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.overCritical">オーバークリティカル</span>(<output name="OverCri">0</output>%)
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkFree" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.freeSlot">自由枠</span>
+                                        <input type="number" name="Free1" class="free-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="Free2" class="free-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="Free3" class="free-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="Free4" class="free-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="Free5" class="free-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="Free6" class="free-in" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 特殊バフ -->
+                        <div class="section">
+                            <div class="section-title collapsible active" onclick="toggleSection(this)" data-i18n="sections.specialBuffs">特殊バフ・コンボなど</div>
+                            <div class="collapse-content show">
+                                <div class="buff-grid">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkLuna1" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="special.teishin">挺身</span>
+                                        腕力+<input type="number" name="Luna1Edr" value="200" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        知性+<input type="number" name="Luna1Spr" value="200" onchange="calculate('PhysicP','Phy','Pwr')">
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkLuna2" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="special.shashin">捨身</span>(+70%)
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkLuna3" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="special.shingan">心眼</span>(+50%, 弱点倍率+1)
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkMulti" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.multiHit">多段強化</span>
+                                        <select name="Multi1" onchange="calculate('PhysicP','Phy','Pwr')">
+                                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                                        </select>
+                                        <span>撃目　威力×<output name="Multi">1</output></span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkWeakBf" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.weaknessDamageUp">弱点ダメージアップ</span>
+                                        弱点倍率 +<input type="number" name="WeakBf1" min="0" step="1" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkCombo" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.combo">コンボ%</span>
+                                        <input type="number" name="Combo1" min="100" value="100" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkSing" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.sing">歌唱</span>
+                                        <input type="number" name="Sing1" value="100" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkPray" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.pray">祈祷</span>
+                                        <input type="number" name="Pray1" value="50" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkZone" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.zone">ZONE</span>
+                                        <input type="number" name="Zone1" value="0" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkZoneDmg" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.zoneDamageUp">ZONE展開時ダメージUP</span>
+                                        <input type="number" name="ZoneDmg1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkAZ" checked onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.azEnhance">AZ時強化</span>
+                                        <input type="number" name="AZ1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkPwrUp" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="special.statFixedIncrease">能力固定値上昇</span>
+                                        腕力UP<input type="number" name="PwrUp" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                        <span style="margin-left:15px;">知性UP</span>
+                                        <input type="number" name="ItgUp" value="" onchange="calculate('PhysicP','Phy','Pwr')">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- オーラ/環境効果 -->
+                        <div class="section">
+                            <div class="section-title aura collapsible" onclick="toggleSection(this)" data-i18n="sections.auraEnvironment">オーラ/環境効果</div>
+                            <div class="collapse-content">
+                                <div class="buff-grid">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkAuraUp" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label aura" data-i18n="aura.auraIncrease">オーラ増加</span>
+                                        <input type="number" name="AuraUp1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="AuraUp2" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <input type="number" name="AuraUp3" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkAuraDown" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="aura.reduction">軽減</span>
+                                        <input type="number" name="AuraDown1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <span class="result"><output name="Aura">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEnvUp" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label aura" data-i18n="aura.envIncrease">環境増加</span>
+                                        <input type="number" name="EnvUp1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkEnvDown" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="aura.reduction">軽減</span>
+                                        <input type="number" name="EnvDown1" value="" onchange="calculate('PhysicP','Phy','Pwr')">%
+                                        <span class="result"><output name="Env">0.0</output>%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 隠しフィールド -->
+                        <input type="hidden" name="ChkBarrier">
+                        <input type="hidden" name="ChkItgUp">
+                        <input type="hidden" name="ChkCri">
+                        <input type="hidden" name="Cri1" value="0">
+                        <input type="hidden" name="ChkHpBf">
+                        <input type="hidden" name="HpBf1" value="0">
+                        
+                        <!-- 計算結果 -->
+                        <div class="results-section">
+                            <h3 data-i18n="sections.results">計算結果</h3>
+                            <div class="attack-type-toggle">
+                                <label class="toggle"><input type="checkbox" name="ChkSingle" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                <span class="toggle-label" data-i18n="results.singleTarget">単体攻撃 (×1.1)</span>
+                                <span style="margin-left: 20px;"></span>
+                                <label class="toggle"><input type="checkbox" name="ChkShorten" onchange="calculate('PhysicP','Phy','Pwr')"><span class="slider"></span></label>
+                                <span class="toggle-label" data-i18n="results.shortenDigits">桁簡略化</span>
+                            </div>
+                            <div class="result-info">
+                                <div class="result-info-item"><span class="label" data-i18n="results.elementalMultiplier">属性倍率</span><span class="value"><output name="EleMod">1.00</output></span></div>
+                                <div class="result-info-item"><span class="label weak" data-i18n="results.weaknessMultiplier">弱点倍率</span><span class="value"><output name="WeakMod">1.85</output></span></div>
+                            </div>
+                            <table class="result-table">
+                                <tr><th rowspan="2"></th><th colspan="2" data-i18n="results.elemental">属性攻撃</th><th colspan="2" data-i18n="results.nonElemental">無属性攻撃</th></tr>
+                                <tr><th data-i18n="results.normal">通常</th><th data-i18n="results.critical">クリティカル</th><th data-i18n="results.normal">通常</th><th data-i18n="results.critical">クリティカル</th></tr>
+                                <tr><td class="row-label" data-i18n="results.neutral">等倍</td><td class="dmg-cell" id="PhysicP_EleNor"></td><td class="dmg-cell damage-crit" id="PhysicP_EleNorCri"></td><td class="dmg-cell" id="PhysicP_Nor"></td><td class="dmg-cell damage-crit" id="PhysicP_NorCri"></td></tr>
+                                <tr><td class="row-label" data-i18n="results.weakness">弱点</td><td class="dmg-cell" id="PhysicP_EleWeak"></td><td class="dmg-cell damage-crit" id="PhysicP_EleWeakCri"></td><td class="dmg-cell" id="PhysicP_Weak"></td><td class="dmg-cell damage-crit" id="PhysicP_WeakCri"></td></tr>
+                                <tr><td class="row-label" data-i18n="results.resistance">耐性</td><td class="dmg-cell" id="PhysicP_EleResist"></td><td class="dmg-cell damage-crit" id="PhysicP_EleResistCri"></td><td class="dmg-cell" id="PhysicP_Resist"></td><td class="dmg-cell damage-crit" id="PhysicP_ResistCri"></td></tr>
+                                <tr><td class="row-label" data-i18n="results.enemyToAlly">敵→味方</td><td class="dmg-cell" id="PhysicP_EleEnemy"></td><td class="dmg-cell damage-crit" id="PhysicP_EleEnemyCri"></td><td class="dmg-cell" id="PhysicP_Enemy"></td><td class="dmg-cell damage-crit" id="PhysicP_EnemyCri"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 魔法ダメージ計算（知性依存） -->
+        <div id="magic" class="tab-content">
+            <form name="MagicI">
+                <div class="calculator-card">
+                    <div class="card-header">
+                        <span data-i18n="tabs.magic">知性依存</span> <span data-i18n="sections.statusPower">ダメージ計算</span>
+                        <div>
+                            <button type="button" onclick="resetForm('MagicI')" data-i18n="buttons.reset">リセット</button>
+                            <button type="button" onclick="calculate('MagicI','Mag','Itg')" data-i18n="buttons.calculate">計算</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="preset-section">
+                            <h4 data-i18n="preset.title">プリセット管理</h4>
+                            <div class="preset-row">
+                                <input type="text" id="presetName_MagicI" placeholder="プリセット名" data-i18n="preset.name">
+                                <button type="button" class="btn-save" onclick="savePreset('MagicI')" data-i18n="buttons.save">保存</button>
+                                <select id="presetList_MagicI" onchange="updateDeleteBtn('MagicI')">
+                                    <option value="" data-i18n="preset.select">-- 選択 --</option>
+                                </select>
+                                <button type="button" class="btn-load" onclick="loadPreset('MagicI')" data-i18n="buttons.load">読込</button>
+                                <button type="button" class="btn-delete" onclick="deletePreset('MagicI')" data-i18n="buttons.delete">削除</button>
+                            </div>
+                            <div class="preset-row" style="margin-top: 8px;">
+                                <button type="button" class="btn-share-url" onclick="shareState('MagicI')" data-i18n="buttons.shareUrl">🔗 URL共有</button>
+                                <button type="button" class="btn-share-text" onclick="shareAsText('MagicI')" data-i18n="buttons.shareText">📋 テキスト共有</button>
+                                <button type="button" class="btn-share-image" onclick="shareAsImage('MagicI')" data-i18n="buttons.shareImage">📷 画像共有</button>
+                            </div>
+                        </div>
+
+                        <!-- ステータス・威力 -->
+                        <div class="section">
+                            <div class="section-title" data-i18n="sections.statusPower">ステータス・威力</div>
+                            <div class="stat-group ally">
+                                <div class="stat-group-title" data-i18n="stats.ally">味方ステータス</div>
+                                <div class="input-grid">
+                                    <div class="input-item"><label data-i18n="stats.intelligence">知性</label><input type="number" name="Itg" min="0" value="0" onchange="calculate('MagicI','Mag','Itg')"></div>
+                                    <div class="input-item"><label data-i18n="stats.mp">MP</label><input type="number" name="Mp" min="0" value="0" onchange="calculate('MagicI','Mag','Itg')"></div>
+                                    <div class="input-item"><label data-i18n="stats.weaponMagAtk">武器魔力</label><input type="number" name="WpMagAtk" min="0" value="0" onchange="calculate('MagicI','Mag','Itg')"></div>
+                                    <div class="input-item"><label data-i18n="stats.magic">魔力</label><span class="output-value" id="MagicI-MagAtk">0</span></div>
+                                </div>
+                            </div>
+                            <div class="stat-group enemy">
+                                <div class="stat-group-title" data-i18n="stats.enemy">敵ステータス</div>
+                                <div class="input-grid">
+                                    <div class="input-item"><label data-i18n="stats.magicDefense">魔防</label><input type="number" name="PhyDef" min="0" value="174" onchange="calculate('MagicI','Mag','Itg')"></div>
+                                    <div class="input-item"><label data-i18n="stats.level">Lv</label><input type="number" name="EneLv" min="0" value="140" onchange="calculate('MagicI','Mag','Itg')"></div>
+                                </div>
+                            </div>
+                            <div class="stat-group skill">
+                                <div class="stat-group-title" data-i18n="stats.skill">スキル</div>
+                                <div class="input-grid">
+                                    <div class="input-item"><label data-i18n="stats.skillPower">威力</label><input type="number" name="Mod" min="0" step="1" value="100" onchange="calculate('MagicI','Mag','Itg')">%</div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="Pwr" value="0">
+                            <input type="hidden" name="WpPhyAtk" value="0">
+                        </div>
+                        
+                        <!-- 装備効果 -->
+                        <div class="section">
+                            <div class="section-title equip collapsible active" onclick="toggleSection(this)" data-i18n="sections.equipment">装備効果</div>
+                            <div class="collapse-content show">
+                                <div class="buff-grid">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEleBfEq" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.elementalBuff">属性バフ(装備効果)</span>
+                                        <input type="number" name="EleBfEq1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkHpBfEq" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.hpCondition">HP条件強化(装備効果)</span>
+                                        <input type="number" name="HpBfEq1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkPPEq" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.statusAilment">状態異常強化(装備効果)</span>
+                                        <input type="number" name="PPEq1" class="pp-eq-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="PPEq2" class="pp-eq-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="PPEq3" class="pp-eq-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="PPEq4" class="pp-eq-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="PPEq5" class="pp-eq-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="PPEq6" class="pp-eq-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkWeak" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.weaknessEnhance">弱点強化</span>
+                                        <input type="number" name="Weak1" value="50" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkMpCost" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.mpCostAttack">MP消費攻撃</span>
+                                        <input type="number" name="MpCost1" value="15" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkOoAf" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.targetAim">狙い撃つ</span>
+                                        <input type="number" name="OoAf1" value="50" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEneNum" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.enemyCount">てきのかず</span>
+                                        敵数<input type="number" name="EneNum1" value="1" min="1" onchange="calculate('MagicI','Mag','Itg')">
+                                        ×<input type="number" name="EneNum2" value="30" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <span class="result"><output name="EneNum">0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkTenmei" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.lightShadow">天冥人数補正</span>
+                                        <input type="number" name="Tenmei1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkDbs" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.statusEnhance">状態異常エンハンス</span>
+                                        <input type="number" name="Dbs1" value="50" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkOverthrowEq" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.overthrowEquip">下克上(装備効果)</span>
+                                        <select name="OverthrowEqType" onchange="calculate('MagicI','Mag','Itg')">
+                                            <option value="elpis">エルピス</option>
+                                            <option value="mujima">ムジマ</option>
+                                        </select>
+                                        <span class="result"><output name="OverthrowEq">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkGrowUp" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.damageGrowth">与ダメ倍成長</span>
+                                        <input type="number" name="GrowUp1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkGrowDown" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.damageReductionGrowth">被ダメ減成長(敵)</span>
+                                        <input type="number" name="GrowDown1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkDespair" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label equip" data-i18n="equipment.despairPower">絶望の力</span>
+                                        人数<input type="number" name="Despair1" value="" min="0" onchange="calculate('MagicI','Mag','Itg')">
+                                        ×<input type="number" name="Despair2" value="100" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="result"><output name="Despair">0</output>%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ダメージ補正 -->
+                        <div class="section">
+                            <div class="section-title collapsible active" onclick="toggleSection(this)" data-i18n="sections.damageModifiers">ダメージ補正</div>
+                            <div class="collapse-content show">
+                                <div class="buff-grid">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkItgBf" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.intelligenceBuff">知性バフ</span>
+                                        <input type="number" name="ItgBf1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="ItgBf2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="ItgBf3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkItgDb" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.debuff">デバフ</span>
+                                        <input type="number" name="ItgDb1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="ItgDb2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="ItgDb3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="result"><output name="ItgBf">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkMagRDb" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.magicalResDebuff">魔耐デバフ(敵)</span>
+                                        <input type="number" name="MagRDb1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="MagRDb2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="MagRDb3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkMagRBf" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.buff">バフ</span>
+                                        <input type="number" name="MagRBf1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="MagRBf2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="MagRBf3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="result"><output name="MagRDb">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEleRDb" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.elementalResDebuff">属耐デバフ(敵)</span>
+                                        <input type="number" name="EleRDb1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="EleRDb2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="EleRDb3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkEleRBf" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.buff">バフ</span>
+                                        <input type="number" name="EleRBf1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="EleRBf2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="EleRBf3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="result"><output name="EleRDb">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkWpBf" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.weaponTypeBuff">武器種バフ</span>
+                                        <input type="number" name="WpBf1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="WpBf2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="WpBf3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="result"><output name="WpBf">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEleBf" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.elementalBuff">属性バフ</span>
+                                        <input type="number" name="EleBf1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="EleBf2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="EleBf3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkEleDb" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="buffs.debuff">デバフ</span>
+                                        <input type="number" name="EleDb1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="EleDb2" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <input type="number" name="EleDb3" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                        <span class="result"><output name="EleBf">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkCriBf" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.criticalDamageBuff">クリダメバフ</span>
+                                        <input type="number" name="CriBf1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <input type="hidden" name="ChkPP">
+                                    <input type="hidden" name="PP1" value="0"><input type="hidden" name="PP2" value="0"><input type="hidden" name="PP3" value="0">
+                                    <input type="hidden" name="ChkSelfPP">
+                                    <input type="hidden" name="SelfPP1" value="0"><input type="hidden" name="SelfPP2" value="0"><input type="hidden" name="SelfPP3" value="0">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkMental" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="buffs.mental">精神統一</span>
+                                        <input type="number" name="Mental1" class="mental-in" value="0.23" step="0.01" style="width:50px" onchange="calculate('MagicI','Mag','Itg')">%/MP
+                                        <span class="result"><output name="Mental" class="mental-out">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEagle" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="buffs.eagle">虎視眈眼</span>
+                                        <input type="number" name="Eagle1" value="30" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkOverthrow" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="buffs.overthrow">下克上</span>
+                                        <span class="result"><output name="Overthrow">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkBreak" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.break">ブレイク</span>(<output name="Break">0</output>%)
+                                        <span style="margin-left:15px;">バリア(敵)</span>
+                                        <input type="number" name="Barrier1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkFree" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="buffs.freeSlot">自由枠</span>
+                                        <input type="number" name="Free1" class="free-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="Free2" class="free-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="Free3" class="free-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="Free4" class="free-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="Free5" class="free-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="Free6" class="free-in" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <!-- 特殊バフ -->
+                        <div class="section">
+                            <div class="section-title collapsible active" onclick="toggleSection(this)" data-i18n="sections.specialBuffs">特殊バフ・コンボなど</div>
+                            <div class="collapse-content show">
+                                <div class="buff-grid">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkLuna1" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="special.teishin">挺身</span>
+                                        知性+<input type="number" name="Luna1Spr" value="200" onchange="calculate('MagicI','Mag','Itg')">
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkLuna2" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="special.shashin">捨身</span>(+70%)
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkLuna3" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="special.shingan">心眼</span>(+50%, 弱点倍率+1)
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkMulti" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.multiHit">多段強化</span>
+                                        <select name="Multi1" onchange="calculate('MagicI','Mag','Itg')">
+                                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                                        </select>
+                                        <span>撃目　威力×<output name="Multi">1</output></span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkWeakBf" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.weaknessDamageUp">弱点ダメージアップ</span>
+                                        弱点倍率 +<input type="number" name="WeakBf1" min="0" step="1" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkCombo" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.combo">コンボ%</span>
+                                        <input type="number" name="Combo1" min="100" value="100" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkSing" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.sing">歌唱</span>
+                                        <input type="number" name="Sing1" value="100" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkPray" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.pray">祈祷</span>
+                                        <input type="number" name="Pray1" value="50" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkZone" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.zone">ZONE</span>
+                                        <input type="number" name="Zone1" value="0" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkZoneDmg" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.zoneDamageUp">ZONE展開時ダメージUP</span>
+                                        <input type="number" name="ZoneDmg1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkAZ" checked onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label" data-i18n="special.azEnhance">AZ時強化</span>
+                                        <input type="number" name="AZ1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkItgUp" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label special" data-i18n="special.statFixedIncrease">能力固定値上昇</span>
+                                        知性UP<input type="number" name="ItgUp" value="" onchange="calculate('MagicI','Mag','Itg')">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- オーラ/環境効果 -->
+                        <div class="section">
+                            <div class="section-title aura collapsible" onclick="toggleSection(this)" data-i18n="sections.auraEnvironment">オーラ/環境効果</div>
+                            <div class="collapse-content">
+                                <div class="buff-grid">
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkAuraUp" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label aura" data-i18n="aura.auraIncrease">オーラ増加</span>
+                                        <input type="number" name="AuraUp1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="AuraUp2" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <input type="number" name="AuraUp3" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkAuraDown" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="aura.reduction">軽減</span>
+                                        <input type="number" name="AuraDown1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <span class="result"><output name="Aura">0.0</output>%</span>
+                                    </div>
+                                    <div class="buff-row">
+                                        <label class="toggle"><input type="checkbox" name="ChkEnvUp" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label aura" data-i18n="aura.envIncrease">環境増加</span>
+                                        <input type="number" name="EnvUp1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <span class="buff-separator">/</span>
+                                        <label class="toggle toggle-small"><input type="checkbox" name="ChkEnvDown" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                        <span class="buff-label debuff" data-i18n="aura.reduction">軽減</span>
+                                        <input type="number" name="EnvDown1" value="" onchange="calculate('MagicI','Mag','Itg')">%
+                                        <span class="result"><output name="Env">0.0</output>%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <input type="hidden" name="ChkBarrier">
+                        <input type="hidden" name="PwrBf1" value=""><input type="hidden" name="PwrBf2" value=""><input type="hidden" name="PwrBf3" value="">
+                        <input type="hidden" name="PwrDb1" value=""><input type="hidden" name="PwrDb2" value=""><input type="hidden" name="PwrDb3" value="">
+                        <input type="hidden" name="ChkPwrBf"><input type="hidden" name="ChkPwrDb">
+                        <input type="hidden" name="PhyRDb1" value=""><input type="hidden" name="PhyRDb2" value=""><input type="hidden" name="PhyRDb3" value="">
+                        <input type="hidden" name="PhyRBf1" value=""><input type="hidden" name="PhyRBf2" value=""><input type="hidden" name="PhyRBf3" value="">
+                        <input type="hidden" name="ChkPhyRDb"><input type="hidden" name="ChkPhyRBf">
+                        <input type="hidden" name="PwrUp" value="0"><input type="hidden" name="ChkPwrUp">
+                        <input type="hidden" name="Luna1Edr" value="0">
+                        <input type="hidden" name="ChkCri">
+                        <input type="hidden" name="Cri1" value="0">
+                        <input type="hidden" name="ChkHpBf">
+                        <input type="hidden" name="HpBf1" value="0">
+                        
+                        <!-- 計算結果 -->
+                        <div class="results-section">
+                            <h3 data-i18n="sections.results">計算結果</h3>
+                            <div class="attack-type-toggle">
+                                <label class="toggle"><input type="checkbox" name="ChkSingle" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                <span class="toggle-label" data-i18n="results.singleTarget">単体攻撃 (×1.1)</span>
+                                <span style="margin-left: 20px;"></span>
+                                <label class="toggle"><input type="checkbox" name="ChkShorten" onchange="calculate('MagicI','Mag','Itg')"><span class="slider"></span></label>
+                                <span class="toggle-label" data-i18n="results.shortenDigits">桁簡略化</span>
+                            </div>
+                            <div class="result-info">
+                                <div class="result-info-item"><span class="label" data-i18n="results.elementalMultiplier">属性倍率</span><span class="value"><output name="EleMod">1.00</output></span></div>
+                                <div class="result-info-item"><span class="label weak" data-i18n="results.weaknessMultiplier">弱点倍率</span><span class="value"><output name="WeakMod">2.00</output></span></div>
+                            </div>
+                            <table class="result-table">
+                                <tr><th rowspan="2"></th><th colspan="2" data-i18n="results.elemental">属性攻撃</th><th colspan="2" data-i18n="results.nonElemental">無属性攻撃</th></tr>
+                                <tr><th data-i18n="results.normal">通常</th><th data-i18n="results.critical">クリティカル</th><th data-i18n="results.normal">通常</th><th data-i18n="results.critical">クリティカル</th></tr>
+                                <tr><td class="row-label" data-i18n="results.neutral">等倍</td><td class="dmg-cell" id="MagicI_EleNor"></td><td class="dmg-cell damage-crit" id="MagicI_EleNorCri"></td><td class="dmg-cell" id="MagicI_Nor"></td><td class="dmg-cell damage-crit" id="MagicI_NorCri"></td></tr>
+                                <tr><td class="row-label" data-i18n="results.weakness">弱点</td><td class="dmg-cell" id="MagicI_EleWeak"></td><td class="dmg-cell damage-crit" id="MagicI_EleWeakCri"></td><td class="dmg-cell" id="MagicI_Weak"></td><td class="dmg-cell damage-crit" id="MagicI_WeakCri"></td></tr>
+                                <tr><td class="row-label" data-i18n="results.resistance">耐性</td><td class="dmg-cell" id="MagicI_EleResist"></td><td class="dmg-cell damage-crit" id="MagicI_EleResistCri"></td><td class="dmg-cell" id="MagicI_Resist"></td><td class="dmg-cell damage-crit" id="MagicI_ResistCri"></td></tr>
+                                <tr><td class="row-label" data-i18n="results.enemyToAlly">敵→味方</td><td class="dmg-cell" id="MagicI_EleEnemy"></td><td class="dmg-cell damage-crit" id="MagicI_EleEnemyCri"></td><td class="dmg-cell" id="MagicI_Enemy"></td><td class="dmg-cell damage-crit" id="MagicI_EnemyCri"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <p style="text-align: center; color: #6c757d; margin-top: 15px; font-size: 0.8em;">
+            <span data-i18n="footer.note1">※ アナザーエデン ダメージ計算式に基づいて計算</span><br>
+            <span data-i18n="footer.note2">※ オレンジ色の数値はクリティカル時のダメージ</span>
+        </p>
+    </div>
+
+    <!-- Floating Damage Display -->
+    <div id="floatingDamage" class="floating-damage">
+        <div class="floating-damage-header" onclick="toggleFloatingDamage()">
+            <span class="floating-damage-header-title" data-i18n="floating.title">クリティカルダメージ</span>
+            <span class="floating-damage-toggle">▼</span>
+        </div>
+        <div class="floating-damage-content">
+            <div class="floating-damage-item">
+                <div class="floating-damage-label" data-i18n="results.normal">通常</div>
+                <div class="floating-damage-value" id="float-normal">-</div>
+            </div>
+            <div class="floating-damage-item">
+                <div class="floating-damage-label weak" data-i18n="results.weakness">弱点</div>
+                <div class="floating-damage-value" id="float-weak">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/utils.js"></script>
+    <script src="js/buffCalculations.js"></script>
+    <script src="js/damageCalculation.js"></script>
+    <script src="js/lzstring.js"></script>
+    <script src="js/presets.js"></script>
+    <script src="js/share.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>
